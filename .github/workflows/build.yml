@@ -239,8 +239,8 @@ jobs:
         run: |
           ./gradlew publish
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: ncipollo/release-action@v1
         with:
-          tag: 'v${{ steps.properties.outputs.sdl2_version }}-${{ steps.properties.outputs.controllable_sdl_version }}'
           name: '${{ steps.properties.outputs.sdl2_version }}-${{ steps.properties.outputs.controllable_sdl_version }}'
           artifacts: ${{ steps.build.outputs.artifact }}
