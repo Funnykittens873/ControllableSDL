@@ -200,6 +200,11 @@ jobs:
           cp -L /usr/local/lib/libSDL2.so ${{ matrix.config.output }}/libSDL2.so
           # Copy the bridge we just forced to compile
           cp ../libsdl2gdx.so ${{ matrix.config.output }}/libsdl2gdx.so
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdl-natives-linux-${{ matrix.config.name }}
+          path: artifact_contents
   build-jar:
     needs: [build-sdl-windows, build-sdl-macos, build-sdl-linux]
     runs-on: ubuntu-latest
