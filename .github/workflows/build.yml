@@ -175,27 +175,31 @@ jobs:
           fi
           echo "Architecture verification passed!"
         working-directory: SDL
-      - name: Build Bridge via Gradle
+      - name: Force Build libsdl2gdx.so
         run: |
-          chmod +x ./gradlew
-          ./gradlew :build -PexcludeTests=true
-        # Note: We run this in the root, not the SDL folder
-        working-directory: . 
-
+          # 1. Find the source file (just in case it's named differently)
+          SOURCE_FILE=$(find src -name "*.cpp" | head -n 1)
+          echo "Found source: $SOURCE_FILE"
+          
+          # 2. Compile it manually using the ARM64 cross-compiler
+          # We include the SDL headers and link the library we just built
+          ${{ matrix.config.arch }}-linux-gnu-g++ -shared -fPIC \
+            -I./SDL/include \
+            -I${JAVA_HOME}/include \
+            -I${JAVA_HOME}/include/linux \
+            $SOURCE_FILE \
+            -o libsdl2gdx.so \
+            -L/usr/local/lib -lSDL2
+            
       - name: Create Natives Structure
         run: |
           mkdir artifact_contents
           cd artifact_contents
           mkdir -p ${{ matrix.config.output }}
-          # Copy the SDL dependency we built earlier
+          # Copy the base SDL2
           cp -L /usr/local/lib/libSDL2.so ${{ matrix.config.output }}/libSDL2.so
-          # Find the bridge file Gradle just made and copy it
-          find ../build -name "libsdl2gdx.so" -exec cp {} ${{ matrix.config.output }}/libsdl2gdx.so \;
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sdl-natives-linux-${{ matrix.config.name }}
-          path: artifact_contents
+          # Copy the bridge we just forced to compile
+          cp ../libsdl2gdx.so ${{ matrix.config.output }}/libsdl2gdx.so
   build-jar:
     needs: [build-sdl-windows, build-sdl-macos, build-sdl-linux]
     runs-on: ubuntu-latest
